@@ -1,9 +1,7 @@
 
 module.exports = {
   entry: {
-    bundle :'./src/client.js',
-    pollbundle:'./src/poll.js',
-    mainpageBundle:'./src/mainpage.js'
+    chartBundle :'./src/chart.js'
   },
   output: {
     path: './public',
