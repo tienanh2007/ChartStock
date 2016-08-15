@@ -96,31 +96,6 @@
 	  }
 	  return color;
 	}
-	var defaultData = {
-	  labels: ["January", "February", "March", "April", "May", "June", "July"],
-	  datasets: [{
-	    label: "My First dataset",
-	    fill: false,
-	    lineTension: 0.1,
-	    backgroundColor: "rgba(75,192,192,0.4)",
-	    borderColor: "rgba(75,192,192,1)",
-	    borderCapStyle: 'butt',
-	    borderDash: [],
-	    borderDashOffset: 0.0,
-	    borderJoinStyle: 'miter',
-	    pointBorderColor: "rgba(75,192,192,1)",
-	    pointBackgroundColor: "#fff",
-	    pointBorderWidth: 1,
-	    pointHoverRadius: 5,
-	    pointHoverBackgroundColor: "rgba(75,192,192,1)",
-	    pointHoverBorderColor: "rgba(220,220,220,1)",
-	    pointHoverBorderWidth: 2,
-	    pointRadius: 1,
-	    pointHitRadius: 10,
-	    data: [65, 59, 80, 81, 56, 55, 40],
-	    spanGaps: false
-	  }]
-	};
 
 	var Box = function (_Component) {
 	  (0, _inherits3.default)(Box, _Component);
@@ -131,11 +106,10 @@
 	    var _this = (0, _possibleConstructorReturn3.default)(this, (0, _getPrototypeOf2.default)(Box).call(this, props));
 
 	    _this.submitStock = function () {
-	      if (_this.state.value) {
-	        ws.send(_this.state.value);
-	        _this.setState({ value: "" });
+	      if (_this.input.value) {
+	        ws.send(_this.input.value);
+	        _this.input.value = "";
 	      }
-	      console.log(_this.state.stocks);
 	    };
 
 	    _this.handleChange = function (e) {
@@ -144,15 +118,13 @@
 	      });
 	    };
 
-	    _this.state = { stock: defaultData, value: "", stocks: ['MMM', 'RLYP'] };
+	    _this.state = { stocks: ['MMM', 'RLYP'] };
 	    return _this;
 	  }
 
 	  (0, _createClass3.default)(Box, [{
 	    key: 'getData',
 	    value: function getData(stocks) {
-	      var _this2 = this;
-
 	      var stockData = {
 	        labels: [],
 	        datasets: []
@@ -208,33 +180,34 @@
 	          data.map(function (today) {
 	            stockData.labels.unshift(today[0]);
 	          });
-	          _this2.setState({ stock: stockData });
 	        },
 	        error: function error(err) {
 	          console.log(err);
 	        }
 	      });
+	      return stockData;
 	    }
 	  }, {
 	    key: 'componentDidMount',
 	    value: function componentDidMount() {
-	      var _this3 = this;
+	      var _this2 = this;
 
-	      this.getData(this.state.stocks);
 	      ws.onmessage = function (event) {
-	        _this3.setState({ stocks: [].concat((0, _toConsumableArray3.default)(_this3.state.stocks), (0, _toConsumableArray3.default)(JSON.parse(event.data))) }, function () {
-	          return _this3.getData(_this3.state.stocks);
-	        });
+	        _this2.setState({ stocks: [].concat((0, _toConsumableArray3.default)(_this2.state.stocks), (0, _toConsumableArray3.default)(JSON.parse(event.data))) });
 	      };
 	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
+	      var _this3 = this;
+
 	      return _react2.default.createElement(
 	        'div',
 	        null,
-	        _react2.default.createElement(_reactChartjs.Line, { data: this.state.stock }),
-	        _react2.default.createElement('input', { value: this.state.value, onChange: this.handleChange }),
+	        _react2.default.createElement(_reactChartjs.Line, { data: this.getData(this.state.stocks) }),
+	        _react2.default.createElement('input', { ref: function ref(node) {
+	            _this3.input = node;
+	          } }),
 	        _react2.default.createElement(
 	          'button',
 	          { onClick: this.submitStock },

@@ -13,38 +13,11 @@ function getRandomColor() {
   }
   return color;
 }
-const defaultData = {
-  labels: ["January", "February", "March", "April", "May", "June", "July"],
-  datasets: [
-    {
-      label: "My First dataset",
-      fill: false,
-      lineTension: 0.1,
-      backgroundColor: "rgba(75,192,192,0.4)",
-      borderColor: "rgba(75,192,192,1)",
-      borderCapStyle: 'butt',
-      borderDash: [],
-      borderDashOffset: 0.0,
-      borderJoinStyle: 'miter',
-      pointBorderColor: "rgba(75,192,192,1)",
-      pointBackgroundColor: "#fff",
-      pointBorderWidth: 1,
-      pointHoverRadius: 5,
-      pointHoverBackgroundColor: "rgba(75,192,192,1)",
-      pointHoverBorderColor: "rgba(220,220,220,1)",
-      pointHoverBorderWidth: 2,
-      pointRadius: 1,
-      pointHitRadius: 10,
-      data: [65, 59, 80, 81, 56, 55, 40],
-      spanGaps: false,
-    }
-  ]
-};
 
 class Box extends Component {
   constructor(props) {
     super(props);
-    this.state = {stock: defaultData,value:"",stocks: ['MMM','RLYP']};
+    this.state = {stocks: ['MMM','RLYP']};
   }
 
   getData(stocks){
@@ -105,30 +78,26 @@ class Box extends Component {
         data.map((today) =>{
           stockData.labels.unshift(today[0])
         })
-        this.setState({stock:stockData})
       },
       error: (err) => {
         console.log(err);
       }
     });
+    return stockData;
   }
 
   componentDidMount(){
-    this.getData(this.state.stocks);
     ws.onmessage = (event) => {
-      this.setState({stocks:[...this.state.stocks,...JSON.parse(event.data)]},() =>
-        this.getData(this.state.stocks)
-      )
+      this.setState({stocks:[...this.state.stocks,...JSON.parse(event.data)]})
     };
   }
 
 
   submitStock = () => {
-    if(this.state.value){
-      ws.send(this.state.value)
-      this.setState({value:""})
+    if(this.input.value){
+      ws.send(this.input.value)
+      this.input.value = "";
     }
-    console.log(this.state.stocks)
   }
 
   handleChange = (e) => {
@@ -140,8 +109,8 @@ class Box extends Component {
   render(){
     return(
       <div>
-      <Line data={this.state.stock}/>
-      <input value={this.state.value} onChange={this.handleChange}/>
+      <Line data={this.getData(this.state.stocks)}/>
+      <input ref={node => {this.input = node}} />
       <button onClick={this.submitStock}>Add a stock</button>
       </div>
     );
