@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 import $ from 'jquery'
 import {Component} from 'react'
 import {Line} from "react-chartjs-2"
+import {createStore} from 'redux'
+import {connect,Provider} from 'react-redux';
 const HOST = location.origin.replace(/^http/, 'ws')
 const ws = new WebSocket(HOST);
 function getRandomColor() {
@@ -13,85 +15,109 @@ function getRandomColor() {
   }
   return color;
 }
-
-class Box extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {stocks: ['MMM','RLYP']};
+const stocks = (state = ['MMM'], action) => {
+  switch(action.type){
+    case 'ADD':
+    return [...state,...action.stock];
+    default:
+    return state;
+  }
+}
+class StockGraph extends Component {
+  componentDidMount(){
+    ws.onmessage = (event) => {
+      this.props.onAdd(JSON.parse(event.data));
+    };
   }
 
-  getData(stocks){
-    let stockData = {
-      labels: [],
-      datasets: []
-    };
-    stocks.map( (s) => {
-      const color = ""+getRandomColor();
-      stockData.datasets.unshift({
-        label: s,
-        fill: false,
-        lineTension: 0.1,
-        backgroundColor: color,
-        borderColor: color,
-        borderCapStyle: 'butt',
-        borderDash: [],
-        borderDashOffset: 0.0,
-        borderJoinStyle: 'miter',
-        pointBorderColor: color,
-        pointBackgroundColor: "#fff",
-        pointBorderWidth: 1,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: "rgba(75,192,192,1)",
-        pointHoverBorderColor: "rgba(220,220,220,1)",
-        pointHoverBorderWidth: 2,
-        pointRadius: 1,
-        pointHitRadius: 10,
-        data: [],
-        spanGaps: false,
-      })
-      $.ajax({
-        url: 'https://www.quandl.com/api/v3/datasets/WIKI/' + s +
-        '.json?api_key=5JariFax996CBUB4cXmY&start_date=2016-01-04',
-        type: 'GET',
-        async: false,
-        success: (data) => {
-          data = data.dataset.data;
-          console.log('user polls found, data: ');
-          console.log(data);
-          data.map((today) =>{
-            stockData.datasets[0].data.unshift(today[1])
-          })
-          console.log(stockData)
-        },
-        error: (err) => {
-          console.log(err);
-        }
-      });
+  render(){
+    return (
+      <Line data={this.props.data}/>
+    )
+  }
+}
+const mapStateToGraph = (state) => {
+  return {
+    data: getData(state)
+  }
+}
+const mapDispatchToGraph = (dispatch) => {
+  return {
+    onAdd: (data) => {
+      dispatch({"type":"ADD","stock":data})
+    }
+  }
+}
+const DaGraph = connect(
+  mapStateToGraph,
+  mapDispatchToGraph
+)(StockGraph);
+const getData = (stocks) => {
+  let stockData = {
+    labels: [],
+    datasets: []
+  };
+  stocks.map( (s) => {
+    const color = ""+getRandomColor();
+    stockData.datasets.unshift({
+      label: s,
+      fill: false,
+      lineTension: 0.1,
+      backgroundColor: color,
+      borderColor: color,
+      borderCapStyle: 'butt',
+      borderDash: [],
+      borderDashOffset: 0.0,
+      borderJoinStyle: 'miter',
+      pointBorderColor: color,
+      pointBackgroundColor: "#fff",
+      pointBorderWidth: 1,
+      pointHoverRadius: 5,
+      pointHoverBackgroundColor: "rgba(75,192,192,1)",
+      pointHoverBorderColor: "rgba(220,220,220,1)",
+      pointHoverBorderWidth: 2,
+      pointRadius: 1,
+      pointHitRadius: 10,
+      data: [],
+      spanGaps: false,
     })
     $.ajax({
-      url: 'https://www.quandl.com/api/v3/datasets/WIKI/RLYP' +
+      url: 'https://www.quandl.com/api/v3/datasets/WIKI/' + s +
       '.json?api_key=5JariFax996CBUB4cXmY&start_date=2016-01-04',
       type: 'GET',
       async: false,
       success: (data) => {
         data = data.dataset.data;
+        console.log('user polls found, data: ');
+        console.log(data);
         data.map((today) =>{
-          stockData.labels.unshift(today[0])
+          stockData.datasets[0].data.unshift(today[1])
         })
+        console.log(stockData)
       },
       error: (err) => {
         console.log(err);
       }
     });
-    return stockData;
-  }
-
-  componentDidMount(){
-    ws.onmessage = (event) => {
-      this.setState({stocks:[...this.state.stocks,...JSON.parse(event.data)]})
-    };
-  }
-
+  })
+  $.ajax({
+    url: 'https://www.quandl.com/api/v3/datasets/WIKI/RLYP' +
+    '.json?api_key=5JariFax996CBUB4cXmY&start_date=2016-01-04',
+    type: 'GET',
+    async: false,
+    success: (data) => {
+      data = data.dataset.data;
+      data.map((today) =>{
+        stockData.labels.unshift(today[0])
+      })
+    },
+    error: (err) => {
+      console.log(err);
+    }
+  });
+  return stockData;
+}
+class Box extends Component {
 
   submitStock = () => {
     if(this.input.value){
@@ -100,16 +126,10 @@ class Box extends Component {
     }
   }
 
-  handleChange = (e) => {
-    this.setState({
-      value: e.target.value
-    })
-  }
-
   render(){
     return(
       <div>
-      <Line data={this.getData(this.state.stocks)}/>
+      <DaGraph/>
       <input ref={node => {this.input = node}} />
       <button onClick={this.submitStock}>Add a stock</button>
       </div>
@@ -117,6 +137,8 @@ class Box extends Component {
   }
 }
 ReactDOM.render(
-  <Box/>,
+  <Provider store={createStore(stocks)}>
+  <Box/>
+  </Provider>,
   document.getElementById('root')
 );

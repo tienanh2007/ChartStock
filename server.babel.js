@@ -16,7 +16,9 @@ const wss = new SocketServer({ server });
 let messages = [];
 wss.on('connection', (ws) => {
   console.log('Client connected');
-  ws.send(JSON.stringify(messages));
+  if(messages.length != 0){
+    ws.send(JSON.stringify(messages));
+  }
   ws.on('message', function (message) {
     messages.push(message)
     console.log('Message Received: %s', message);
