@@ -20,10 +20,18 @@ wss.on('connection', (ws) => {
     ws.send(JSON.stringify(messages));
   }
   ws.on('message', function (message) {
-    messages.push(message)
+    let data = JSON.parse(message).data;
+    let action = JSON.parse(message).action;
+    if(action == "add"){
+      messages.push(data)
+    }
+    else {
+      messages.splice(messages.indexOf(data),1)
+      console.log(messages)
+    }
     console.log('Message Received: %s', message);
     wss.clients.forEach(function (conn) {
-      conn.send(JSON.stringify([message]));
+      conn.send(message);
     });
   });
   ws.on('close', () => console.log('Client disconnected'));

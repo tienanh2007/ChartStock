@@ -19,6 +19,11 @@ const stocks = (state = ['MMM'], action) => {
   switch(action.type){
     case 'ADD':
     return [...state,...action.stock];
+    case 'REMOVE':
+    return [
+      ...state.slice(0,state.indexOf(action.stock)),
+      ...state.slice(state.indexOf(action.stock) + 1)
+    ];
     default:
     return state;
   }
@@ -26,7 +31,18 @@ const stocks = (state = ['MMM'], action) => {
 class StockGraph extends Component {
   componentDidMount(){
     ws.onmessage = (event) => {
-      this.props.onAdd(JSON.parse(event.data));
+      let data = JSON.parse(event.data).data;
+      let action = JSON.parse(event.data).action;
+      console.log(JSON.parse(event.data))
+      if(action == "add"){
+        this.props.onAdd([data]);
+      }
+      else if(action == "remove"){
+        this.props.onRem(data);
+      }
+      else{
+        this.props.onAdd(JSON.parse(event.data))
+      }
     };
   }
 
@@ -45,6 +61,9 @@ const mapDispatchToGraph = (dispatch) => {
   return {
     onAdd: (data) => {
       dispatch({"type":"ADD","stock":data})
+    },
+    onRem: (data) => {
+      dispatch({"type":"REMOVE","stock":data})
     }
   }
 }
@@ -121,7 +140,14 @@ class Box extends Component {
 
   submitStock = () => {
     if(this.input.value){
-      ws.send(this.input.value)
+      ws.send(JSON.stringify({"data":this.input.value,"action":"add"}))
+      this.input.value = "";
+    }
+  }
+
+  deleteStock = () => {
+    if(this.input.value){
+      ws.send(JSON.stringify({"data":this.input.value,"action":"remove"}))
       this.input.value = "";
     }
   }
@@ -132,6 +158,7 @@ class Box extends Component {
       <DaGraph/>
       <input ref={node => {this.input = node}} />
       <button onClick={this.submitStock}>Add a stock</button>
+      <button onClick={this.deleteStock}>Delete a stock</button>
       </div>
     );
   }

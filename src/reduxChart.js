@@ -4,7 +4,6 @@ const stocks = (state = [], action) => {
   switch(action.type){
     case 'ADD':
     return [...state,action.stock]
-    case 'REMOVE':
   }
 }
 class StockGraph extends Component {
